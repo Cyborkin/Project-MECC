@@ -1,0 +1,45 @@
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: honeypot_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword_here
+      MYSQL_DATABASE: honeypot
+      MYSQL_USER: honeypot_user
+      MYSQL_PASSWORD: honeypot_pass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - honeynet
+
+  web:
+    image: cyborkin/honeypot-web:latest
+    container_name: honeypot_web
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web/src:/var/www/html:rw
+      - ./web/logs:/var/log/apache2
+    networks:
+      - honeynet
+
+  adminer:
+    image: adminer:latest
+    container_name: honeypot_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks:
+      - honeynet
+
+volumes:
+  db_data:
+
+networks:
+  honeynet:
+    driver: bridge
