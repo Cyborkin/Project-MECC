@@ -1,0 +1,98 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: honeypot_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-honeypot}
+      MYSQL_USER: ${MYSQL_USER:-honeypot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-honeypotpass}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./app/src/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [honeynet]
+
+  web:
+    build: .
+    image: cyborkin/honeypot-web:2025-10-27
+    container_name: honeypot_web
+    depends_on: [db]
+    # Persist Apache logs to host for analysis
+    volumes:
+      - ./app/logs:/var/log/apache2
+    expose:
+      - "80"
+    networks: [honeynet]
+    restart: unless-stopped
+
+  nginx-waf:
+    image: owasp/modsecurity-crs:4.19-nginx-alpine-202510180710
+    container_name: nginx_waf
+    depends_on: [web]
+    ports:
+      - "${HOST_PORT:-8080}:8080"   # image listens on 8080 internally
+    environment:
+      PROXY: "1"
+      BACKEND: "http://web:80"
+      PARANOIA: "1"
+      DETECTION_ONLY: "1"
+    volumes:
+      - ./waf/logs:/var/log/nginx
+      - ./waf/modsec:/var/log/modsecurity
+    networks: [honeynet]
+    restart: unless-stopped
+
+  logstash:
+    image: opensearchproject/logstash-oss-with-opensearch-output-plugin:latest
+    container_name: honeypot_logstash
+    depends_on: [nginx-waf, opensearch]
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./app/logs:/var/log/apache2:ro
+      - ./waf/logs:/var/log/nginx:ro
+      - ./waf/modsec:/var/log/modsecurity:ro
+    environment:
+      - LOGSTASH_JAVA_OPTS=-Xmx512m -Xms512m
+    networks: [honeynet]
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:2.12.0
+    container_name: honeypot_opensearch
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.name=opensearch-docker-cluster
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-FSA_CAPSTONE_final-M3CC!123}
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks: [honeynet]
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:2.12.0
+    container_name: honeypot_dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["https://opensearch:9200"]
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-FSA_CAPSTONE_final-M3CC!123}
+      - OPENSEARCH_SSL_VERIFICATION_MODE=none
+    ports:
+      - "5601:5601"
+    depends_on: [opensearch]
+    networks: [honeynet]
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  opensearch_data:
+
+networks:
+  honeynet:
+    driver: bridge
