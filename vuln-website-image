@@ -1,0 +1,59 @@
+#README and Docker Image:
+
+# Honeypot SQLi - Quick start
+
+**** Requirements: Docker & Docker Compose installed. ****
+
+1. Pull image from Docker Hub (web image):
+   docker pull cyborkin/honeypot-web:latest
+
+2. Start stack:
+   docker compose up -d
+
+3. Verify files are running:
+   docker compose ps
+
+4. "docker compose ps" should return with this:
+   NAME               IMAGE              STATUS         PORTS
+honeypot_web       php:8.2-apache     Up 2 minutes   0.0.0.0:8080->80/tcp
+honeypot_db        mysql:8.0          Up 2 minutes   3306/tcp
+honeypot_adminer   adminer:latest     Up 2 minutes   0.0.0.0:8081->8080/tcp
+
+5. Visit:
+   - Honeypot site: http://localhost:8080
+   - Adminer: http://localhost:8081  (system: MySQL, server: db, username: honeypot_user, password: honeypot_pass, db: honeypot)
+
+6. Stop & remove:
+   docker compose down --volumes
+
+#Created and run on an Ubuntu host machine. Docker image should translate to any OS.
+This website is PURPOSEFULLY VULNERABLE to MySql and XSS attacks. This local http is 
+built for testing purposes and open-source to build and test as you please.
+
+* DO NOT EXPOSE LOCAL HTTP TO INTERNET WITHOUT PRIOR PRECAUTIONS *
+** DO NOT ADD ANY PERSONAL INFORMATION OR SENSITIVE INFORMATION TO THE CODE OR DATABASE **
+*** HIGHLY RECOMMENDED TO RUN THIS VULNERABLE WEBSITE IN AN ISOLATED VM TO PROTECT PERSONAL INFORMATION ***
+
+**** DOCKER INSTALL FOR UBUNTU ****
+
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+# Docker Package Install
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Verify Installation
+sudo systemctl status docker
+sudo systemctl start docker (if disabled)
+sudo docker run hello-world
