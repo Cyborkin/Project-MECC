@@ -15,7 +15,7 @@ services:
 
   web:
     build: .
-    image: cyborkin/honeypot-web:2025-10-27
+    image: cyborkin/honeypot-web:latest
     container_name: honeypot_web
     depends_on: [db]
     # Persist Apache logs to host for analysis
