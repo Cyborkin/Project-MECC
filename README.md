@@ -54,6 +54,8 @@ Repository: https://github.com/Cyborkin/Project-MECC:
 - git clone https://github.com/Cyborkin/Project-MECC.git
 - cd Project-MECC
 - cp .env.example .env        #edit .env with safe lab values (do NOT add real secrets)
+- mkdir -p waf/logs waf/modsec app/logs
+- chmod -R 777 waf app/logs
 - docker compose up --build   #builds web image and launches full stack: DB, web, WAF, logstash, opensearch, dashboards
 
 From container registry (quick run — image only):
@@ -125,9 +127,15 @@ No data in OpenSearch:
 - Verify Logstash pipeline is running and input paths match mounted logs.
 - Confirm OpenSearch is healthy: curl -s http://localhost:9200/_cluster/health?pretty
 
+Dashboard not available:
+- check docker-compose.yml for Opensearch Passwords
+- Passwords will need to be changed (long, complex, capitals, symbols, numbers)
+- Verify errors with sudo docker compose logs -f opensearch
+
 Image build fails:
 - Ensure the root Dockerfile is used (delete app/Dockerfile if present).
 - Rebuild with no cache: docker compose build --no-cache web.
+- Check if previous builds have been cloned. Always start with deleting old builds/directories and cloning fresh.
 
 Development & contribution:
 
@@ -176,10 +184,13 @@ Full stack (recommended for team labs):
 - git clone https://github.com/Cyborkin/Project-MECC.git
 - cd Project-MECC
 - cp .env.example .env
+- mkdir -p waf/logs waf/modsec app/logs
+- chmod -R 777 waf app/logs
+- Change Opensearch passwords in docker-compose.yml
 - docker compose up --build
 - Open:
 - WAF + app: http://localhost:8080
-- OpenSearch: http://localhost:9200
+- OpenSearch: http://localhost:9200 (expect connection reset error)
 - Dashboards: http://localhost:5601
 - Single image (fast local test):
 - mkdir -p honeypot_logs
