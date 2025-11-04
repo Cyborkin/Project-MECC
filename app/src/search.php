@@ -1,4 +1,7 @@
-<?php require 'includes/db.php'; ?>
+<?php require 'includes/db.php';
+/* Prevent mysqli from throwing exceptions on SQL errors so the page renders instead of returning HTTP 500 */
+mysqli_report(MYSQLI_REPORT_OFF);
+?>
 <!doctype html><html><head><meta charset="utf-8"><title>Search</title></head><body>
 <h1>Search results</h1>
 <?php
@@ -8,7 +11,7 @@ $sql = "SELECT id, name, description FROM products WHERE name LIKE '%$q%' OR des
 error_log("SEARCH_QUERY: " . $sql); // logs will contain the raw query
 $res = $mysqli->query($sql);
 if(!$res){
-  echo "<p>DB error: " . $mysqli->error . "</p>";
+  echo "<p>DB error: " . htmlspecialchars($mysqli->error) . "</p>";
 } else {
   while($r = $res->fetch_assoc()){
     echo "<div><h3>" . htmlspecialchars($r['name']) . "</h3><p>" . htmlspecialchars($r['description']) . "</p></div>";

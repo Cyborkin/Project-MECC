@@ -1,0 +1,13 @@
+<?php
+// comment.php — wrapper that executes the original handler under app/src.
+// Many legacy scripts only render when executed directly; this preserves that behavior.
+$target = __DIR__ . '/app/src/comment.php';
+if (is_file($target)) {
+    chdir(dirname($target));     // ensure relative includes like includes/db.php resolve
+    include $target;
+    exit;
+}
+http_response_code(404);
+header('Content-Type: text/plain; charset=utf-8');
+echo "comment handler not found on server.";
+

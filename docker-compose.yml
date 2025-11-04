@@ -21,8 +21,17 @@ services:
     # Persist Apache logs to host for analysis
     volumes:
       - ./app/logs:/var/log/apache2
-    expose:
-      - "80"
+      - ./assets:/var/www/html/assets
+      - ./includes:/var/www/html/includes
+      - ./index.php:/var/www/html/index.php
+      - ./login.php:/var/www/html/login.php
+      - ./comments.php:/var/www/html/comments.php
+      - ./search.php:/var/www/html/search.php
+      - ./app/src:/var/www/html/app/src
+      - ./comment.php:/var/www/html/comment.php
+      - ./:/var/www/html:rw
+    # expose:
+     # - "80"
     networks: [honeynet]
     restart: unless-stopped
 
@@ -36,6 +45,7 @@ services:
       PROXY: "1"
       BACKEND: "http://web:80"
       PARANOIA: "1"
+      BLOCKING_PARANOIA: "1"
       DETECTION_ONLY: "1"
     volumes:
       - ./waf/logs:/var/log/nginx
