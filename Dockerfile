@@ -27,6 +27,11 @@ RUN sed -i 's/DirectoryIndex .*/DirectoryIndex index.php index.html/' /etc/apach
 # Copy honeypot app into web root
 # If your app expects a different docroot, update accordingly
 COPY app/src/ /var/www/html/
+COPY assets/ /var/www/html/assets/
+COPY includes/ /var/www/html/includes/
+COPY index.php /var/www/html/index.php
+COPY login.php /var/www/html/login.php
+COPY comments.php /var/www/html/comments.php
 
 # Reasonable perms
 RUN chown -R www-data:www-data /var/www/html
